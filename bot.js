@@ -1,10 +1,13 @@
+
+
 const stickers = ['https://stickerswiki.ams3.cdn.digitaloceanspaces.com/dogsemideia/sticker_0.webp', 
 'https://stickerswiki.ams3.cdn.digitaloceanspaces.com/fire_laviniya_vk/6401980.160.webp', 'https://stickerswiki.ams3.cdn.digitaloceanspaces.com/supernaturalstickk/7955778.160.webp',
 'https://stickerswiki.ams3.cdn.digitaloceanspaces.com/spec2d77134350e7d26ea791e725b43733_by_stckrRobot/860419.160.webp',
 'https://stickerswiki.ams3.cdn.digitaloceanspaces.com/Circuitmunna/3234521.160.webp', 'https://stickerswiki.ams3.cdn.digitaloceanspaces.com/a9cb5ddf_e036_47db_9a77_f14d3330ae02_by_sticat_bot/315813.160.webp']
 
 const TelegramApi = require('node-telegram-bot-api')
-const token = '6283728101:AAH_S3dnZVlB919RYaMTpPVvbtAAwNl2us4'
+const axios = require('axios');
+const token = process.env.Telegram_TOKEN;
 const bot = new TelegramApi(token, {polling: true});
 const chats = {};
 
@@ -38,6 +41,7 @@ bot.setMyCommands([
     {command: '/start', description: 'Start the bot'},
     {command: '/info', description: 'Get information'},
     {command: '/game', description: 'Let\'s play'},
+    {command: '/weather', description: 'See what\'s the weather'}
 ]);
 const start = () =>{
     bot .on('message',  async msg => {
@@ -59,15 +63,26 @@ const start = () =>{
         if(text == '/game'){
             return startGame(chatID);
         }
-    
-        return bot.sendMessage(chatID, 'I don'+'t understand your command');
+        if(text == '/weather'){
+          return bot.sendMessage(chatID,"Please send me your geolocation");
+        }
+        if(msg.location){
+          const weatherUrl = `http://api.weatherapi.com/v1/current.json?key=${process.env.WeatherAPI}&q=${msg.location.latitude},${msg.location.longitude}`
+          // console.log(msg.location);
+          const response = await axios.get(weatherUrl);
+          // console.log(response.data.current.condition.text);
+          return bot.sendMessage(chatID, `You are in ${response.data.location.name} in ${response.data.location.country}. The temperature is ${response.data.current.temp_c}°. ${response.data.current.condition.text} is possible`);
+        
+        }
+      // console.log(msg.location.latitude);
+        return bot.sendMessage(chatID, 'I don\''+'t understand your command');
     
     })
     bot.on('callback_query', async msg => {
         const data = msg.data;
         const chatID = msg.message.chat.id;
         if(data === 'Again'){
-          return startGame(chatID);rtGame(cha)
+          return startGame(chatID);
         }
         if(data == chats[chatID]){
             return bot.sendMessage(chatID, 'You guessed the number '+ data + ' correctly', againOptions);
